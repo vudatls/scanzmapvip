@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# Giao diện mạng
+INTERFACE="enp4s0"
+
+# Tệp dải mạng
+SUBNET_FILE="subnetall"
+
+# Các cổng cần quét
+PORTS=("80" "8080" "8888" "4007" "4006" "10001" "5106" "5102" "1014" "3008" "9977" "7007" "7001" "4002")
+
+# Tệp kết quả chung
+OUTPUT_FILE="allzmap.txt"
+LIVE_OUTPUT_FILE="livezmap.txt"
+
+# Tạo/đặt lại tệp kết quả nếu đã tồn tại
+> $OUTPUT_FILE
+> $LIVE_OUTPUT_FILE
+
+# Hàm kiểm tra proxy live bằng Python
+check_live_proxy() {
+    IP=$1
+    PORT=$2
+    # Python kiểm tra kết nối đến proxy
+    python3 - <<EOF
+import time
+from proxy_checker import ProxyChecker
+from colorama import Fore, Style
+
+def check_proxy(proxy):
+    retries = 3
+    checker = ProxyChecker()
+    for attempt in range(retries):
+        try:
+            result = checker.check_proxy(proxy)
+            if result:
+                print(Fore.GREEN + f'[ALIVE] {proxy} | {result["anonymity"]} | Timeout: {str(result["timeout"])} {result["country_code"]}' + Style.RESET_ALL + ' ' + result['protocols'][0])
+                with open("$LIVE_OUTPUT_FILE", "a", encoding="UTF-8") as file:
+                    file.write(proxy + '\n')
+                return
+            else:
+                print(Fore.RED + f'[DEAD] {proxy}' + Style.RESET_ALL)
+                return
+        except Exception as e:
+            print(Fore.YELLOW + f'[ERROR] {proxy} - Attempt {attempt+1}/{retries}: {e}' + Style.RESET_ALL)
+            if attempt < retries - 1:
+                time.sleep(2)
+            else:
+                print(Fore.RED + f'[DEAD] {proxy} - Max retries reached' + Style.RESET_ALL)
+                return
+
+check_proxy("$IP:$PORT")
+EOF
+}
+
+# Quét mỗi cổng song song (background process)
+for PORT in "${PORTS[@]}"; do
+    echo "Quét cổng $PORT..."
+    # Quét cổng và xử lý kết quả để lưu vào tệp dưới dạng ip:port
+    sudo zmap -i $INTERFACE -p $PORT --rate 500 -w $SUBNET_FILE | while read IP; do
+        # Lưu kết quả vào allzmap.txt
+        echo "$IP:$PORT" >> $OUTPUT_FILE
+        # Kiểm tra nếu proxy live
+        check_live_proxy $IP $PORT &
+    done &
+done
+
+# Chờ tất cả các tiến trình hoàn thành
+wait
+
+echo "Quá trình quét hoàn thành! Kết quả đã được lưu vào $OUTPUT_FILE."
+echo "Các proxy live đã được lưu vào $LIVE_OUTPUT_FILE."
+
