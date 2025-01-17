@@ -7,7 +7,7 @@ INTERFACE="enp4s0"
 SUBNET_FILE="subnetall"
 
 # Các cổng cần quét
-PORTS=("80" "8080" "8888" "4007" "4006" "10001" "5106" "5102" "1014" "3008" "9977" "7007" "7001" "4002")
+PORTS=("80" "8080")
 
 # Tệp kết quả chung
 OUTPUT_FILE="allzmap.txt"
