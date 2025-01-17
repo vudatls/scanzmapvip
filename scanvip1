@@ -4,14 +4,14 @@
 INTERFACE="enp4s0"
 
 # Tệp dải mạng
-SUBNET_FILE="subnetall"
+SUBNET_FILE="subnetvn"
 
 # Các cổng cần quét
 PORTS=("80" "8080")
 
 # Tệp kết quả chung
 OUTPUT_FILE="allzmap.txt"
-LIVE_OUTPUT_FILE="livezmap.txt"
+LIVE_OUTPUT_FILE="livevn.txt"
 
 # Tạo/đặt lại tệp kết quả nếu đã tồn tại
 > $OUTPUT_FILE
